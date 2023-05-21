@@ -4,3 +4,6 @@ HEIGHT = 1080
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 ORANGE = (30, 83, 162)
+TUBE_path = "images/tube.png"
+MENU_BACK_path = "images/main_menu.png"
+INGAME_BACK_path = "images/ingame_back.png"
