@@ -29,6 +29,9 @@ ball = pygame.Rect(WIDTH / 2 - 15, HEIGHT / 2 - 15, 30, 30)
 main_menu = True
 tiles = math.ceil(WIDTH / game_bg_width) + 1
 scroll = 0
+scroll_speed = 4
+game_over = False
+pipe_gap = 150
 
 logo = font.render(str('FLAPPY HAIR'), 1, (200, 200, 200))
 screen.blit(logo, (470, 150))
@@ -65,22 +68,11 @@ class Bird(pygame.sprite.Sprite):
         #     self.rect.y += int(self.vel)
 
         # jump
-        move_ticker = 0
-        if move_ticker > 0:
-            move_ticker -= 1
 
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE and self.clicked == False and self.rect.top > 5:
-                if move_ticker == 0:
-                    move_ticker = 10
-                    self.clicked = True
-                    self.vel = -10
-                    self.rect.y += int(self.vel)
-
-        # if pygame.mouse.get_pressed()[0] == 1 and self.clicked == False and self.rect.top > 50:
-        #     self.clicked = True
-        #     self.vel = -10
-        #     self.rect.y += int(self.vel)
+        if pygame.mouse.get_pressed()[0] == 1 and self.clicked == False and self.rect.top > 50:
+            self.clicked = True
+            self.vel = -10
+            self.rect.y += int(self.vel)
 
         if pygame.mouse.get_pressed()[0] == 0:
             self.clicked = False
@@ -95,10 +87,38 @@ class Bird(pygame.sprite.Sprite):
                 self.index = 0
         self.image = self.images[self.index]
 
+        # rotate
+        self.image = pygame.transform.rotate(self.images[self.index], self.vel * -0.5)
+
+
+class pipe(pygame.sprite.Sprite):
+    def __init__(self, x, y, position):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.image.load('images/pipe.png')
+        self.rect = self.image.get_rect()
+        # position 1 = top, -1 = bottom
+        if position == 1:
+            self.image = pygame.transform.flip(self.image, False, True)
+            self.rect.bottomleft = [x, y - int(pipe_gap / 2)]
+        if position == -1:
+            self.rect.topleft = [x, y + int(pipe_gap / 2)]
+
+        def update(self):
+            self.rect.x -= scroll_speed
+
 
 bird_group = pygame.sprite.Group()
+pipe_group = pygame.sprite.Group()
+
 flappy = Bird(300, int(HEIGHT / 2))
+
 bird_group.add(flappy)
+
+btm_pipe = pipe(300, int(HEIGHT / 2), -1)
+top_pipe = pipe(300, int(HEIGHT / 2), 1)
+
+pipe_group.add(btm_pipe)
+pipe_group.add(top_pipe)
 
 # game loop
 run = True
@@ -109,25 +129,35 @@ while run:
         if event.type == pygame.QUIT:
             run = False
 
-        if event.type == pygame.MOUSEBUTTONUP:
-            pos = pygame.mouse.get_pos()
-            print(pos)
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
                 main_menu = False
     if not main_menu:
 
-        for i in range(0, tiles):
-            screen.blit(GAME_BG, (i * game_bg_width + scroll, 0))
-            bird_group.draw(screen)
-            bird_group.update()
+        if flappy.rect.bottom > 935:
+            game_over = True
+
+        if not game_over:
+            scroll_speed = 4
+
+            for i in range(0, tiles):
+                screen.blit(GAME_BG, (i * game_bg_width + scroll, 0))
+                bird_group.draw(screen)
+                bird_group.update()
+                pipe_group.draw(screen)
+                pipe_group.update()
+                pygame.display.flip()
+
+            scroll -= 5
+
+            # reset scroll
+            if abs(scroll) > game_bg_width:
+                scroll = 0
+
+        if game_over:
+            game_over_screen = font.render(str('GAME OVER'), 1, (200, 200, 200))
+            screen.blit(game_over_screen, (470, 500))
             pygame.display.flip()
-
-        scroll -= 5
-
-        # reset scroll
-        if abs(scroll) > game_bg_width:
-            scroll = 0
 
 pygame.quit()
 sys.exit()
